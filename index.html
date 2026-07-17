@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Grind — Hour Log</title>
 <style>
-html,body{margin:0;padding:0;background:#000;}
+html,body{margin:0;padding:0;background:#000;touch-action:pan-y;overscroll-behavior-y:contain;-webkit-user-select:none;user-select:none;}
+input,textarea{-webkit-user-select:text;user-select:text;}
 .app-shell{
   --bg:#000000;--surface:#1C1C1E;--surface-2:#242426;--surface-3:#2C2C2E;
   --border:rgba(255,255,255,0.08);--border-strong:rgba(255,255,255,0.16);
@@ -16,7 +17,10 @@ html,body{margin:0;padding:0;background:#000;}
   background:var(--bg);color:var(--text);font-family:var(--font);
   min-height:100vh;width:100%;display:flex;justify-content:center;
   color-scheme:dark;-webkit-font-smoothing:antialiased;
+  opacity:0;transform:scale(0.98) translateY(6px);
+  transition:opacity 0.55s ease,transform 0.55s cubic-bezier(0.16,1,0.3,1);
 }
+.app-shell.visible{opacity:1;transform:scale(1) translateY(0);}
 .app-shell[data-theme="light"]{
   --bg:#F2F2F7;--surface:#FFFFFF;--surface-2:#F2F2F7;--surface-3:#E5E5EA;
   --border:rgba(0,0,0,0.08);--border-strong:rgba(0,0,0,0.14);
@@ -387,13 +391,19 @@ function pulseElement(el){
   el.classList.add("pulse-flash");
 }
 
-function startTicking(){ if(tickIntervalId) return; tickIntervalId = setInterval(tickUpdate, 1000); }
+var tickCount = 0;
+function startTicking(){ if(tickIntervalId) return; tickCount = 0; tickIntervalId = setInterval(tickUpdate, 1000); }
 function stopTicking(){ if(tickIntervalId){ clearInterval(tickIntervalId); tickIntervalId=null; } }
 function tickUpdate(){
   var timerEl = document.getElementById("timerDisplay");
   if(timerEl) timerEl.textContent = fmtTimer(getElapsed());
   var todayEl = document.getElementById("todayTotal");
   if(todayEl) todayEl.textContent = fmtHM(getTodaySec());
+  tickCount++;
+  if(tickCount % 5 === 0) sSet("timerState", state.timer);
+}
+function forcePersistTimer(){
+  if(state.timer.status !== "idle") sSet("timerState", state.timer);
 }
 
 function goalCardHTML(thisWeekSec, goalPct){
@@ -808,6 +818,10 @@ document.getElementById("app").addEventListener("input", handleInput);
 document.getElementById("app").addEventListener("focusout", handleFocusOut);
 document.getElementById("app").addEventListener("keydown", handleKeydown);
 
+document.addEventListener("visibilitychange", function(){ if(document.hidden) forcePersistTimer(); });
+window.addEventListener("pagehide", forcePersistTimer);
+window.addEventListener("blur", forcePersistTimer);
+
 var MIN_LOADING_MS = 1200;
 async function loadAllData(){
   var cats = await sGet("categories", null);
@@ -825,10 +839,13 @@ async function loadAllData(){
 }
 function finishLoading(){
   render();
-  document.getElementById("app").style.display = "";
+  var appEl = document.getElementById("app");
+  appEl.style.display = "";
+  void appEl.offsetWidth;
+  appEl.classList.add("visible");
   var ls = document.getElementById("loadingScreen");
   ls.classList.add("fade-out");
-  setTimeout(function(){ ls.style.display = "none"; }, 550);
+  setTimeout(function(){ ls.style.display = "none"; }, 600);
   if(state.timer.status==="running") startTicking();
 }
 function boot(){
