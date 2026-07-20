@@ -476,7 +476,7 @@ function manualFormHTML(){
   }).join('');
   var todayStr = toDateStr(new Date());
   var canSubmit = f.categoryId && ((parseFloat(f.hours)>0) || (parseFloat(f.minutes)>0));
-  return '<div class="manual-form"><div class="chip-row">'+chips+'</div>'
+  return '<div class="manual-form"><div class="section-label" style="margin-bottom:8px;">CATEGORY</div><div class="chip-row">'+chips+'</div>'
     + '<div class="manual-row">'
     + '<div class="field"><label>Hours</label><input type="number" min="0" inputmode="numeric" value="'+escapeHtml(f.hours)+'" data-bind="manualHours" placeholder="0"></div>'
     + '<div class="field"><label>Minutes</label><input type="number" min="0" max="59" inputmode="numeric" value="'+escapeHtml(f.minutes)+'" data-bind="manualMinutes" placeholder="0"></div>'
@@ -710,7 +710,7 @@ function logSession(){
 
 function toggleManual(){
   if(!state.manualOpen){
-    state.manualForm.categoryId = state.manualForm.categoryId || (state.categories[0] ? state.categories[0].id : null);
+    state.manualForm.categoryId = state.manualForm.categoryId || state.selectedCat || (state.categories[0] ? state.categories[0].id : null);
     state.manualForm.date = state.manualForm.date || toDateStr(new Date());
   }
   state.manualOpen = !state.manualOpen;
